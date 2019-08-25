@@ -42,6 +42,13 @@ object Libs {
             private const val version = "2.2.0"
             const val runtimeKtx = "androidx.work:work-runtime-ktx:$version"
         }
+
+        object Lifecycle {
+            private const val version = "2.2.0-alpha03"
+            const val extensions = "androidx.lifecycle:lifecycle-extensions:$version"
+            const val compiler = "androidx.lifecycle:lifecycle-compiler:$version"
+            const val viewmodel = "androidx.lifecycle:lifecycle-viewmodel-ktx:$version"
+        }
     }
 
     object Dagger {

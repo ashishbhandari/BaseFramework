@@ -3,6 +3,7 @@ package com.tmw
 import com.tmw.appInitializers.AppInitializers
 import dagger.android.AndroidInjector
 import dagger.android.DaggerApplication
+import com.tmw.inject.DaggerAppComponent
 import javax.inject.Inject
 
 /**
@@ -10,16 +11,16 @@ import javax.inject.Inject
  */
 class TmwApplication : DaggerApplication() {
 
-//    @Inject
-//    lateinit var initializers: AppInitializers
+    @Inject
+    lateinit var initializers: AppInitializers
 
     override fun onCreate() {
         super.onCreate()
-//        initializers.init(this)
+        initializers.init(this)
     }
 
     override fun applicationInjector(): AndroidInjector<out DaggerApplication>? {
-        return null
+        return DaggerAppComponent.factory().create(this)
     }
 
 }
