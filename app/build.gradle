@@ -1,0 +1,155 @@
+import com.tmw.buildsrc.Libs
+
+apply plugin: 'com.android.application'
+
+apply plugin: 'kotlin-android'
+
+apply plugin: 'kotlin-kapt'
+
+kapt {
+    correctErrorTypes = true
+    useBuildCache = true
+}
+
+apply plugin: 'kotlin-android-extensions'
+androidExtensions {
+    experimental = true
+}
+
+
+def appVersionCode = propOrDef("tmw.versioncode", 17) as Integer
+println("APK version code: " + appVersionCode)
+
+def useReleaseKeystore = rootProject.file("release/app-release.jks").exists()
+
+android {
+    compileSdkVersion buildConfig.compileSdk
+    defaultConfig {
+        applicationId "com.tmw"
+        minSdkVersion buildConfig.minSdk
+        targetSdkVersion buildConfig.targetSdk
+        versionCode appVersionCode
+        versionName "0.0.0"
+
+        // For now we're sticking to just shipping EN
+        resConfigs "en"
+    }
+
+    signingConfigs {
+        debug {
+            storeFile rootProject.file("release/debug.keystore")
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
+        }
+
+        release {
+            if (useReleaseKeystore) {
+                storeFile rootProject.file("release/app-release.jks")
+                storePassword propOrDef('TMW_RELEASE_KEYSTORE_PWD', "")
+                keyAlias "tmw"
+                keyPassword propOrDef('TMW_RELEASE_KEY_PWD', "")
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    dexOptions {
+        preDexLibraries true
+    }
+
+    lintOptions {
+        // Disable lintVital. Not needed since lint is run on CI
+        checkReleaseBuilds false
+        // Allow lint to check dependencies
+        checkDependencies true
+        // Ignore any tests
+        ignoreTestSources true
+
+        disable 'GradleCompatible', 'FontValidationError'
+    }
+
+    dataBinding {
+        enabled = true
+    }
+
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+        }
+    }
+
+    packagingOptions {
+        // Exclude AndroidX version files
+        exclude 'META-INF/*.version'
+        // Exclude consumer proguard files
+        exclude 'META-INF/proguard/*'
+        // Exclude the Firebase/Fabric/other random properties files
+        exclude '/*.properties'
+//        exclude 'fabric/*.properties'
+        exclude 'META-INF/*.properties'
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+            versionNameSuffix "-dev"
+            applicationIdSuffix ".debug"
+        }
+
+        release {
+            if (useReleaseKeystore) {
+                signingConfig signingConfigs.release
+            } else {
+                // Otherwise just use the debug keystore (this is mainly for PR CI builds)
+                signingConfig signingConfigs.debug
+            }
+            shrinkResources true
+            minifyEnabled true
+            proguardFiles 'proguard-rules.pro'
+        }
+    }
+
+}
+
+dependencies {
+
+    implementation project(":base")
+    implementation project(":base-android")
+
+    implementation Libs.AndroidX.appcompat
+    implementation Libs.AndroidX.constraintlayout
+    implementation Libs.AndroidX.recyclerview
+    implementation Libs.AndroidX.Fragment.fragment
+    implementation Libs.AndroidX.Fragment.fragmentKtx
+
+    implementation Libs.Kotlin.stdlib
+    implementation Libs.Kotlin.reflect
+
+    implementation Libs.Coroutines.core
+    implementation Libs.Coroutines.android
+
+    implementation Libs.Dagger.androidSupport
+    kapt Libs.Dagger.compiler
+    kapt Libs.Dagger.androidProcessor
+
+    compileOnly Libs.AssistedInject.annotationDagger2
+    kapt Libs.AssistedInject.processorDagger2
+}
+
+
+android.applicationVariants.all { variant ->
+    task "open${variant.name.capitalize()}" {
+        dependsOn "install${variant.name.capitalize()}"
+
+        doLast {
+            exec {
+                commandLine "adb shell monkey -p ${variant.applicationId} -c android.intent.category.LAUNCHER 1".split(" ")
+            }
+        }
+    }
+}

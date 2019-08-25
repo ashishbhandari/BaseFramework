@@ -1,0 +1,43 @@
+
+import com.tmw.buildsrc.Libs
+
+apply plugin: 'com.android.library'
+
+apply plugin: 'kotlin-android'
+
+apply plugin: 'kotlin-kapt'
+kapt {
+    correctErrorTypes = true
+    useBuildCache = true
+}
+
+
+android {
+    compileSdkVersion buildConfig.compileSdk
+
+    defaultConfig {
+        minSdkVersion buildConfig.minSdk
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+    api project(":base")
+//    implementation project(":data")
+
+    implementation Libs.AndroidX.Fragment.fragment
+    implementation Libs.AndroidX.coreKtx
+    implementation Libs.AndroidX.collection
+
+//    implementation Libs.timber
+//    implementation Libs.threeTenAbp
+//
+//    implementation Libs.Google.firebaseCore
+//    implementation Libs.Google.crashlytics
+
+    kapt Libs.Dagger.compiler
+}
